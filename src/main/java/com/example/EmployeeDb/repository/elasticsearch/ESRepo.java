@@ -1,12 +1,13 @@
-package com.example.EmployeeDb.repository;
-
+package com.example.EmployeeDb.repository.elasticsearch;
 import java.util.List;
+
+import org.springframework.data.elasticsearch.repository.ElasticsearchRepository;
 
 import com.example.EmployeeDb.models.Employee;
 
-public interface EmployeeRepository{
-
-    public Employee findById(String id);
+public interface ESRepo extends ElasticsearchRepository<Employee,String>{
+    
+    public Employee findAllById(String id);
     
     public List<Employee> findByDesignation(String designation);
 
@@ -20,5 +21,5 @@ public interface EmployeeRepository{
 
     public void deleteById(String id);
 
-    public void save(Employee e);
+    public <S extends Employee> S save(S entity);
 }
