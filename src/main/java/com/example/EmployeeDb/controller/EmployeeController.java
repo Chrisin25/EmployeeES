@@ -39,7 +39,7 @@ public class EmployeeController {
     }
     
     @GetMapping("/ViewEmployee")
-    public Map<String,Object> getemployeecontroller(
+    public ResponseEntity <Map<String,Object>> getemployeecontroller(
     @RequestParam(value = "year-of-experience", required = false) Long yearOfExperience,
     @RequestParam(value = "managerId", required = false) String managerId
     ){
