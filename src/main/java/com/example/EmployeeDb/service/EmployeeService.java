@@ -31,12 +31,8 @@ public class EmployeeService {
         if(e.getDesignation().matches("Account Manager")){
             if(employeeRepository.findAllByManagerId(id).isEmpty()){
                 result.put("message","Successfully deleted "+e.getName()+" from employee list of the organization");
-                try{
+                
                     employeeRepository.deleteById(id); 
-                } catch(Exception e1){
-                    System.out.println("new exception found  :   "+e);
-                    return new ResponseEntity<>(result,HttpStatus.OK);
-                }
                 
             }
             else{
@@ -45,12 +41,8 @@ public class EmployeeService {
         }
         else{
             result.put("message","Successfully deleted "+e.getName()+" from employee list of the organization");
-            try{
+            
                 employeeRepository.deleteById(id); 
-            } catch(Exception e1){
-                System.out.println("new exception found  :   "+e);
-                return new ResponseEntity<>(result,HttpStatus.OK);
-            }
             
         }
         return new ResponseEntity<>(result,HttpStatus.OK);
