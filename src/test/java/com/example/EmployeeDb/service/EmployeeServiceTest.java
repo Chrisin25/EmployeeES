@@ -73,7 +73,7 @@ public void testDeleteEmployeeService_NotFound() {
         ResponseEntity<Map<String, String>> response = employeeService.DeleteEmployeeService("111");
 
         assertThat(response.getStatusCode()).isEqualTo(HttpStatus.NOT_FOUND);
-        assertThat(response.getBody()).containsEntry("message", "Employee doesnot exist");
+        assertThat(response.getBody()).containsEntry("message", "Requested employee id cannot be found");
 }
  
 @Test
@@ -242,6 +242,29 @@ public void testAddService_Success(){
     assertEquals(HttpStatus.CREATED, response.getStatusCode());
     assertTrue(response.getBody().containsKey("message "));
     assertTrue(response.getBody().get("message ").contains("successfully created"));
+
+}
+@Test
+public void testAddService_managerNotExist(){
+    Employee employee = new Employee("1" , "John Doe", "Associate","john@aspire.com","QA","1234567890","Kochi","5",OffsetDateTime.now());
+    when(employeeRepository.findAllById(employee.getManagerId())).thenReturn(null);
+    List<Employee> empList=Arrays.asList(employee);
+    when(employeeRepository.findAllByDepartment(employee.getDepartment())).thenReturn(empList);
+    ResponseEntity<Map<String, String>> response=employeeService.addEmployeesService(employee);
+    assertEquals(HttpStatus.FAILED_DEPENDENCY, response.getStatusCode());
+    assertTrue(response.getBody().containsKey("message "));
+    assertTrue(response.getBody().get("message ").contains("Given manager doesnot exist"));
+
+}
+@Test
+public void testAddService_alreadyPresent(){
+    Employee employee = new Employee("1" , "John Doe", "Account Manager","john@aspire.com","Engineering","1234567890","Kochi","0",OffsetDateTime.now());
+    when(employeeRepository.findAllByNameAndDesignationAndEmailAndMobile(employee.getName(),employee.getDesignation(),employee.getEmail(),employee.getMobile())).thenReturn(employee);
+
+    ResponseEntity<Map<String, String>> response=employeeService.addEmployeesService(employee);
+    assertEquals(HttpStatus.CONFLICT, response.getStatusCode());
+    assertTrue(response.getBody().containsKey("message "));
+    assertTrue(response.getBody().get("message ").contains("Given employee already  exist"));
 
 }
 @Test

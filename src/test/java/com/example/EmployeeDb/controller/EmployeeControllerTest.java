@@ -49,7 +49,7 @@ public class EmployeeControllerTest {
                 .thenReturn(ResponseEntity.ok(response));
 
         mockMvc.perform(delete("/remove")
-                .param("id", "123"))
+                .param("employeeId", "123"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.message").value("Employee deleted successfully"));
     }

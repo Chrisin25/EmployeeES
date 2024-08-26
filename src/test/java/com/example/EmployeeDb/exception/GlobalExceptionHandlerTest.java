@@ -1,6 +1,5 @@
 package com.example.EmployeeDb.exception;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -62,5 +61,18 @@ public class GlobalExceptionHandlerTest {
         .andExpect(jsonPath("$.yearOfExperience").value("give a valid yearOfExperience"));
         
     }
-    
+    @Test
+    public void testHandleArgumentExceptions() {
+        // Arrange
+        GlobalExceptionHandler exceptionHandler = new GlobalExceptionHandler();
+        Exception mockException = mock(Exception.class);
+        when(mockException.getMessage()).thenReturn("Test exception message");
+
+        // Act
+        ResponseEntity<Map<String, String>> response = exceptionHandler.handleArgumentExceptions(mockException);
+
+        // Assert
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertEquals("Test exception message", response.getBody().get("message"));
+    }
 }

@@ -33,7 +33,12 @@ public class EmployeeService {
                 if(employeeRepository.findAllByManagerId(employeeId).isEmpty()){
                     result.put("message","Successfully deleted "+employee.getName()+
                     " from employee list of the organization");
-                    employeeRepository.deleteById(employeeId); 
+                    try{
+                        employeeRepository.deleteById(employeeId);
+                    } 
+                    catch(Exception e){
+                        System.out.println(e.getLocalizedMessage());
+                    }
                 }
                 //manager with subordinates cannot be deleted
                 else{
@@ -44,7 +49,12 @@ public class EmployeeService {
             else{
                 result.put("message","Successfully deleted "+employee.getName()+
                 " from employee list of the organization");
-                employeeRepository.deleteById(employeeId); 
+                try{
+                    employeeRepository.deleteById(employeeId);
+                } 
+                catch(Exception e){
+                    System.out.println(e.getLocalizedMessage());
+                } 
             
             }
             return new ResponseEntity<>(result,HttpStatus.OK);
@@ -179,11 +189,8 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
             result.put("message ","Department doesnot exist");
             return new ResponseEntity<>(result,HttpStatus.FAILED_DEPENDENCY);
         }
-        }
-        else if(!employee.getDesignation().matches("Account Manager")){
-                result.put("message ","Manager already exist in this department");
-                return new ResponseEntity<>(result,HttpStatus.CONFLICT);
-            }
+    }
+    
         Employee managerExist=employeeRepository.findAllById(employee.getManagerId());
         if(managerExist==null && employee.getDesignation().matches("Associate")){
                 result.put("message ","Given manager doesnot exist");
