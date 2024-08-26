@@ -4,6 +4,7 @@ import java.time.OffsetDateTime;
 
 import javax.validation.constraints.Email;
 import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.NotNull;
 import javax.validation.constraints.Pattern;
 import javax.validation.constraints.Size;
 
@@ -38,6 +39,7 @@ public class Employee {
     @Field(type = FieldType.Text)
     private String location;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")
+    @NotNull
     @Field(type = FieldType.Date, format = DateFormat.date_time)
     private OffsetDateTime dateOfJoining;
     @JsonFormat(pattern = "yyyy-MM-dd'T'HH:mm:ss.SSSXXX")

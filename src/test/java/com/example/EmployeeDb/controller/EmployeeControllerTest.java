@@ -58,7 +58,7 @@ public class EmployeeControllerTest {
         Map<String, Object> response = new HashMap<>();
         response.put("employees", new ArrayList<>());
 
-        when(employeeService.getemployeecontroller(Mockito.anyLong(), Mockito.anyString())).thenReturn(ResponseEntity.ok(response));
+        when(employeeService.getEmployeeController(Mockito.anyLong(), Mockito.anyString())).thenReturn(ResponseEntity.ok(response));
 
         mockMvc.perform(get("/ViewEmployee")
                 .param("year-of-experience", "5")

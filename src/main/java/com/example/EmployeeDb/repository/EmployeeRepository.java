@@ -21,5 +21,10 @@ public interface EmployeeRepository extends ElasticsearchRepository<Employee,Str
 
     public List<Employee> findAllByDepartment(String department);
 
+    public Employee findAllByNameAndDesignationAndEmailAndMobile(String name, String designation, String email,
+            String mobile);
+
+    public Employee findByIdAndDesignation(String string, String string2);
+
     
 }

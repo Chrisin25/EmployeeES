@@ -8,7 +8,6 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
@@ -24,73 +23,83 @@ public class EmployeeService {
     @Autowired
     EmployeeRepository employeeRepository;
     //DELETE
-    public ResponseEntity<Map<String,String>> DeleteEmployeeService(String id) {
+    public ResponseEntity<Map<String,String>> DeleteEmployeeService(String employeeId) {
         Map<String,String> result=new HashMap<>();
         try{
-        Employee e= employeeRepository.findAllById(id);//throws exception when employee not found
-        if(e.getDesignation().matches("Account Manager")){
-            if(employeeRepository.findAllByManagerId(id).isEmpty()){
-                result.put("message","Successfully deleted "+e.getName()+" from employee list of the organization");
-                
-                    employeeRepository.deleteById(id); 
-                
+            Employee employee= employeeRepository.findAllById(employeeId);//throws exception when employee not found
+
+            if(employee.getDesignation().matches("Account Manager")){
+                //delete manager without subordinates 
+                if(employeeRepository.findAllByManagerId(employeeId).isEmpty()){
+                    result.put("message","Successfully deleted "+employee.getName()+
+                    " from employee list of the organization");
+                    employeeRepository.deleteById(employeeId); 
+                }
+                //manager with subordinates cannot be deleted
+                else{
+                    result.put("message","Cannot delete manager");
+                }
             }
+            //delete Associates 
             else{
-                result.put("message","Cannot delete manager");
+                result.put("message","Successfully deleted "+employee.getName()+
+                " from employee list of the organization");
+                employeeRepository.deleteById(employeeId); 
+            
             }
+            return new ResponseEntity<>(result,HttpStatus.OK);
         }
-        else{
-            result.put("message","Successfully deleted "+e.getName()+" from employee list of the organization");
-            
-                employeeRepository.deleteById(id); 
-            
-        }
-        return new ResponseEntity<>(result,HttpStatus.OK);
-    }
-    catch(NullPointerException n){
-        result.put("message","Employee doesnot exist");
-        return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
+        catch(NullPointerException n){
+            result.put("message","Requested employee id cannot be found");
+            return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
         
-    }
+        }
    
     }
     //GET
-    public ResponseEntity<Map<String,Object>> getemployeecontroller(Long yearOfExperience,String managerId){
+    public ResponseEntity<Map<String,Object>> getEmployeeController(Long yearOfExperience,String newManagerId){
         Map<String,Object> result=new LinkedHashMap<>();
-        
         List<Object> detailList=new ArrayList<>();
         //create a list of managers
         List<Employee> managerList=employeeRepository.findByDesignation("Account Manager");
         for(Employee manager:managerList){
-            if(managerId==null || managerId.matches(manager.getId()) ){
-            Map<String,Object> employeeManager=new LinkedHashMap<>();
-            employeeManager.put("accountManager", manager.getName());
-            employeeManager.put("departement", manager.getDepartment());
-            employeeManager.put("id",manager.getId());
-            //list of employees under the manager
-            try{
-            List<EmployeeDTO> employeeList;
-            if(yearOfExperience==null){
-               
-                employeeList=getEmployeesByManagerId(manager.getId());
+            //if manager id is not given add all managers to map 
+            //if manager id is given add only that manager to map
+            if(newManagerId==null || newManagerId.matches(manager.getId()) ){
+                Map<String,Object> employeeManagerMap=new LinkedHashMap<>();
+                employeeManagerMap.put("accountManager", manager.getName());
+                employeeManagerMap.put("departement", manager.getDepartment());
+                employeeManagerMap.put("id",manager.getId());
+                //list of employees under the manager
+                try{
+                    List<EmployeeDTO> employeeList;
+                    //only manager id is given
+                    if(yearOfExperience==null){
+                        employeeList=getEmployeesByManagerId(manager.getId());
+                    }
+                    //manager id and year of experience given
+                    else{
+                        employeeList=getEmployeesByManagerIdAndYearOfExperience(manager.getId(),yearOfExperience);
+                    }
+                    //employees are present satisfying the given conditons employee list is added to Map
+                    if(!employeeList.isEmpty()){
+                        employeeManagerMap.put("employeeList",employeeList);
+                        detailList.add(employeeManagerMap); 
+                    }
+            
+                }
+                catch(Exception e){
+                    System.out.println("exception found  :   "+e.getLocalizedMessage());
+                }
+            
             }
             else{
-                employeeList=getEmployeesByManagerIdAndYearOfExperience(manager.getId(),yearOfExperience);
-            }
-            if(!employeeList.isEmpty()){
-                employeeManager.put("employeeList",employeeList);
-                detailList.add(employeeManager); 
-            }
-            
-            }
-            catch(Exception e2){
-                System.out.println("new exception found  :   "+e2);
-            }
-            
+                result.put("message","Requested manager id is not found");
+                return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
             }
         }
         if(detailList.isEmpty()){
-            result.put("message","no employees can be found satisfying this condition");
+            result.put("message","No employees can be found satisfying this condition");
             return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
         }
         else{
@@ -102,51 +111,52 @@ public class EmployeeService {
     }
     
     //UPDATE
-    public ResponseEntity <Map<String,String>> UpdateService(Map<String,String> employeeId){
-        
+    public ResponseEntity <Map<String,String>> UpdateService(Map<String,String> employeeUpdateMap){
         Map<String,String> result=new HashMap<>();
-        
-            //find employee using id
-            Employee e= employeeRepository.findAllById(employeeId.get("employeeId"));
-            if(e==null){
-                result.put("message ","Employee not found");
+        if(employeeUpdateMap.get("employeeId")==null){
+            result.put("message ","specify employeeId of the employee to be updated");
+            return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
+        }
+        if(employeeUpdateMap.get("managerId")==null){
+            result.put("message ","specify new manager Id for updation");
+            return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
+        }
+        //find employee using id
+        Employee employee= employeeRepository.findAllById(employeeUpdateMap.get("employeeId"));
+        if(employee==null){
+            result.put("message ","Employee not found");
             return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
-            }
-            
-            try{ 
-            String old=e.getManagerId();
-            if(old.matches(employeeId.get("managerId"))){
+        }
+        try{ 
+            String oldManagerId=employee.getManagerId();
+            if(oldManagerId.matches(employeeUpdateMap.get("managerId"))){
                 result.put("message ","Employee is already under the given manager");
-                return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
+                return new ResponseEntity<>(result,HttpStatus.CONFLICT);
             }
             //get previous manager 
-            Employee previousManager=employeeRepository.findAllById(old);
-            Employee newManager=employeeRepository.findAllById(employeeId.get("managerId"));
-            if(!newManager.getDesignation().matches("Account Manager")){
-                result.put("message ","Cannot update.Given manager id is not of a manager");
-                return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
-            }
-            e.setManagerId(employeeId.get("managerId"));
-            e.setDepartment(newManager.getDepartment());
-            e.setUpdatedTime(OffsetDateTime.now());
+            Employee previousManager=employeeRepository.findAllById(oldManagerId);
+            Employee newManager=employeeRepository.findByIdAndDesignation(employeeUpdateMap.get("managerId"),"Account Manager");
+            employee.setManagerId(employeeUpdateMap.get("managerId"));
+            employee.setDepartment(newManager.getDepartment());
+            employee.setUpdatedTime(OffsetDateTime.now());
             try{
-                employeeRepository.save(e);
+                employeeRepository.save(employee);
             }
-            catch(Exception e2){
-                System.out.println("new exception found  :   "+e2);  ///
+            catch(Exception e){
+                System.out.println("exception found  :   "+e.getLocalizedMessage());  
                 
             }
             finally{
-            result.put("message ",""+ e.getName()+"'s manager has been successfully changed from "
-            +previousManager.getName()+" to "+newManager.getName()+".");
+                result.put("message ",""+ employee.getName()+"'s manager has been successfully changed from "
+                +previousManager.getName()+" to "+newManager.getName()+".");
             }
-           }
+        }
            
-           catch(Exception n){
-            System.out.println(n.getLocalizedMessage());
-            result.put("message ","Manager not found");
+        catch(Exception e){
+            System.out.println(e.getLocalizedMessage());
+            result.put("message ","Cannot find any managers with requested manager id");
             return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
-            }
+        }
         
         return new ResponseEntity<>(result,HttpStatus.OK);
     }
@@ -156,6 +166,37 @@ public class EmployeeService {
 private static final AtomicInteger GENERATE_ID=new AtomicInteger(106);
 public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee){
     Map<String,String> result=new HashMap<>();
+
+    if(employeeRepository!=null){
+        List<Employee> managerList=employeeRepository.findAllByDesignationAndDepartment("Account Manager",employee.getDepartment());
+        if(!managerList.isEmpty() && employee.getDesignation().matches("Account Manager")){
+            result.put("message ","Manager already exist in this department");
+            return new ResponseEntity<>(result,HttpStatus.CONFLICT);
+        }
+        
+        List<Employee> employeeList=employeeRepository.findAllByDepartment(employee.getDepartment());
+        if(employeeList.isEmpty() && employee.getDesignation().matches("Associate")){
+            result.put("message ","Department doesnot exist");
+            return new ResponseEntity<>(result,HttpStatus.FAILED_DEPENDENCY);
+        }
+        }
+        else if(!employee.getDesignation().matches("Account Manager")){
+                result.put("message ","Manager already exist in this department");
+                return new ResponseEntity<>(result,HttpStatus.CONFLICT);
+            }
+        Employee managerExist=employeeRepository.findAllById(employee.getManagerId());
+        if(managerExist==null){
+                result.put("message ","Given manager doesnot exist");
+                return new ResponseEntity<>(result,HttpStatus.FAILED_DEPENDENCY);
+            }
+            Employee employeeExist=employeeRepository.findAllByNameAndDesignationAndEmailAndMobile(employee.getName(),employee.getDesignation(),employee.getEmail(),employee.getMobile());
+            if(employeeExist!=null){
+                result.put("message ","Given employee already  exist");
+                return new ResponseEntity<>(result,HttpStatus.CONFLICT);
+            }
+
+        
+        
     try{
         OffsetDateTime dateOfJoin=employee.getDateOfJoining();
             //calculate year of experience
@@ -172,25 +213,7 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
     int newId=GENERATE_ID.getAndIncrement();
     employee.setId(String.valueOf(newId));
     
-    if(employeeRepository!=null){
-    List<Employee> managerList=employeeRepository.findAllByDesignationAndDepartment("Account Manager",employee.getDepartment());
-    if(!managerList.isEmpty() && employee.getDesignation().matches("Account Manager")){
-        result.put("message ","Manager already exist");
-        return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
-    }
     
-    List<Employee> associateList=employeeRepository.findAllByDepartment(employee.getDepartment());
-    if(associateList.isEmpty() && employee.getDesignation().matches("Associate")){
-        result.put("message ","Department doesnot exist");
-        return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
-    }
-    }
-    else{
-        if(!employee.getDesignation().matches("Account Manager")){
-            result.put("message ","cannot add employee to this department");
-            return new ResponseEntity<>(result,HttpStatus.BAD_REQUEST);
-        }
-    }
     //add to db
     employee.setCreatedTime(OffsetDateTime.now());
     employee.setUpdatedTime(OffsetDateTime.now());
@@ -198,7 +221,7 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
         employeeRepository.save(employee);
     }
     catch(DataAccessResourceFailureException e) {
-        System.out.println("exception: "+e);
+        System.out.println("exception: "+e.getLocalizedMessage());
     
     }
         result.put("message ","successfully created");
