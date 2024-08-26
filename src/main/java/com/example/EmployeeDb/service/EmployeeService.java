@@ -57,7 +57,7 @@ public class EmployeeService {
    
     }
     //GET
-    public ResponseEntity<Map<String,Object>> getEmployeeController(Long yearOfExperience,String newManagerId){
+    public ResponseEntity<Map<String,Object>> getEmployeeService(Long yearOfExperience,String newManagerId){
         Map<String,Object> result=new LinkedHashMap<>();
         List<Object> detailList=new ArrayList<>();
         //create a list of managers
@@ -185,7 +185,7 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
                 return new ResponseEntity<>(result,HttpStatus.CONFLICT);
             }
         Employee managerExist=employeeRepository.findAllById(employee.getManagerId());
-        if(managerExist==null){
+        if(managerExist==null && employee.getDesignation().matches("Associate")){
                 result.put("message ","Given manager doesnot exist");
                 return new ResponseEntity<>(result,HttpStatus.FAILED_DEPENDENCY);
             }
@@ -198,7 +198,7 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
         
         
     try{
-        OffsetDateTime dateOfJoin=employee.getDateOfJoining();
+    OffsetDateTime dateOfJoin=employee.getDateOfJoining();
             //calculate year of experience
     employee.setYearOfExperience(ChronoUnit.YEARS.between(dateOfJoin, OffsetDateTime.now()));
     }

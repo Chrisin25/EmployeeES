@@ -43,7 +43,7 @@ public class EmployeeController {
     @RequestParam(value = "year-of-experience", required = false) Long yearOfExperience,
     @RequestParam(value = "managerId", required = false) String managerId
     ){
-        return employeeService.getEmployeeController(yearOfExperience, managerId);
+        return employeeService.getEmployeeService(yearOfExperience, managerId);
     }
     
     @DeleteMapping("/remove")
