@@ -13,7 +13,6 @@ import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-
 import com.example.EmployeeDb.models.Employee;
 import com.example.EmployeeDb.models.EmployeeDTO;
 import com.example.EmployeeDb.repository.EmployeeRepository;
@@ -143,7 +142,7 @@ public class EmployeeService {
                 result.put("message ","Employee is already under the given manager");
                 return new ResponseEntity<>(result,HttpStatus.CONFLICT);
             }
-            //get previous manager 
+            //get manager details
             Employee previousManager=employeeRepository.findAllById(oldManagerId);
             Employee newManager=employeeRepository.findByIdAndDesignation(employeeUpdateMap.get("managerId"),"Account Manager");
             employee.setManagerId(employeeUpdateMap.get("managerId"));
@@ -153,21 +152,18 @@ public class EmployeeService {
                 employeeRepository.save(employee);
             }
             catch(Exception e){
-                System.out.println("exception found  :   "+e.getLocalizedMessage());  
-                
+                System.out.println("exception found  :   "+e.getLocalizedMessage());     
             }
             finally{
                 result.put("message ",""+ employee.getName()+"'s manager has been successfully changed from "
                 +previousManager.getName()+" to "+newManager.getName()+".");
             }
         }
-           
         catch(Exception e){
             System.out.println(e.getLocalizedMessage());
             result.put("message ","Cannot find any managers with requested manager id");
             return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
         }
-        
         return new ResponseEntity<>(result,HttpStatus.OK);
     }
 
@@ -176,21 +172,18 @@ public class EmployeeService {
 private static final AtomicInteger GENERATE_ID=new AtomicInteger(106);
 public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee){
     Map<String,String> result=new HashMap<>();
-
     if(employeeRepository!=null){
         List<Employee> managerList=employeeRepository.findAllByDesignationAndDepartment("Account Manager",employee.getDepartment());
         if(!managerList.isEmpty() && employee.getDesignation().matches("Account Manager")){
             result.put("message ","Manager already exist in this department");
             return new ResponseEntity<>(result,HttpStatus.CONFLICT);
         }
-        
         List<Employee> employeeList=employeeRepository.findAllByDepartment(employee.getDepartment());
         if(employeeList.isEmpty() && employee.getDesignation().matches("Associate")){
             result.put("message ","Department doesnot exist");
             return new ResponseEntity<>(result,HttpStatus.FAILED_DEPENDENCY);
         }
     }
-    
         Employee managerExist=employeeRepository.findAllById(employee.getManagerId());
         if(managerExist==null && employee.getDesignation().matches("Associate")){
                 result.put("message ","Given manager doesnot exist");
@@ -201,9 +194,6 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
                 result.put("message ","Given employee already  exist");
                 return new ResponseEntity<>(result,HttpStatus.CONFLICT);
             }
-
-        
-        
     try{
     OffsetDateTime dateOfJoin=employee.getDateOfJoining();
             //calculate year of experience
@@ -214,13 +204,9 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
         System.out.println(e);
         
     }
-    
-
     //Generate id
     int newId=GENERATE_ID.getAndIncrement();
     employee.setId(String.valueOf(newId));
-    
-    
     //add to db
     employee.setCreatedTime(OffsetDateTime.now());
     employee.setUpdatedTime(OffsetDateTime.now());
@@ -229,13 +215,9 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
     }
     catch(DataAccessResourceFailureException e) {
         System.out.println("exception: "+e.getLocalizedMessage());
-    
     }
         result.put("message ","successfully created");
-   
-    
     return new ResponseEntity<>(result,HttpStatus.CREATED);
-
 }
 public List<EmployeeDTO> getEmployeesByManagerId(String managerId) {
     List<Employee> employees = employeeRepository.findAllByManagerId(managerId);

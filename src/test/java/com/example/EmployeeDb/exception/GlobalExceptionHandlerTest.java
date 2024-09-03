@@ -39,14 +39,9 @@ public class GlobalExceptionHandlerTest {
         MethodArgumentNotValidException ex = mock(MethodArgumentNotValidException.class);
         FieldError fieldError = new FieldError("objectName", "fieldName", "defaultMessage");
         List<FieldError> fieldErrors = Collections.singletonList(fieldError);
-        
         when(ex.getFieldErrors()).thenReturn(fieldErrors);
-
-        // Act
         GlobalExceptionHandler handler = new GlobalExceptionHandler();
         ResponseEntity<Map<String, String>> response = handler.handleArgumentExceptions(ex);
-
-        // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertNotNull(response.getBody());
         assertEquals("defaultMessage", response.getBody().get("fieldName"));
@@ -63,15 +58,10 @@ public class GlobalExceptionHandlerTest {
     }
     @Test
     public void testHandleArgumentExceptions() {
-        // Arrange
         GlobalExceptionHandler exceptionHandler = new GlobalExceptionHandler();
         Exception mockException = mock(Exception.class);
         when(mockException.getMessage()).thenReturn("Test exception message");
-
-        // Act
         ResponseEntity<Map<String, String>> response = exceptionHandler.handleArgumentExceptions(mockException);
-
-        // Assert
         assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
         assertEquals("Test exception message", response.getBody().get("message"));
     }
