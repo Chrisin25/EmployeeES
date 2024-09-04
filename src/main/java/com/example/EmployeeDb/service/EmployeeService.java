@@ -9,7 +9,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.dao.DataAccessResourceFailureException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
@@ -48,13 +47,7 @@ public class EmployeeService {
             else{
                 result.put("message","Successfully deleted "+employee.getName()+
                 " from employee list of the organization");
-                try{
-                    employeeRepository.deleteById(employeeId);
-                } 
-                catch(Exception e){
-                    System.out.println(e.getLocalizedMessage());
-                } 
-            
+                employeeRepository.deleteById(employeeId);   
             }
             return new ResponseEntity<>(result,HttpStatus.OK);
         }
@@ -148,18 +141,12 @@ public class EmployeeService {
             employee.setManagerId(employeeUpdateMap.get("managerId"));
             employee.setDepartment(newManager.getDepartment());
             employee.setUpdatedTime(OffsetDateTime.now());
-            try{
-                employeeRepository.save(employee);
-            }
-            catch(Exception e){
-                System.out.println("exception found  :   "+e.getLocalizedMessage());     
-            }
-            finally{
-                result.put("message ",""+ employee.getName()+"'s manager has been successfully changed from "
+            employeeRepository.save(employee);
+            result.put("message ",""+ employee.getName()+"'s manager has been successfully changed from "
                 +previousManager.getName()+" to "+newManager.getName()+".");
-            }
+            
         }
-        catch(Exception e){
+        catch(NullPointerException e){
             System.out.println(e.getLocalizedMessage());
             result.put("message ","Cannot find any managers with requested manager id");
             return new ResponseEntity<>(result,HttpStatus.NOT_FOUND);
@@ -210,13 +197,11 @@ public ResponseEntity <Map<String,String>> addEmployeesService(Employee employee
     //add to db
     employee.setCreatedTime(OffsetDateTime.now());
     employee.setUpdatedTime(OffsetDateTime.now());
-    try{
-        employeeRepository.save(employee);
-    }
-    catch(DataAccessResourceFailureException e) {
-        System.out.println("exception: "+e.getLocalizedMessage());
-    }
-        result.put("message ","successfully created");
+    
+    employeeRepository.save(employee);
+    
+    
+    result.put("message ","successfully created");
     return new ResponseEntity<>(result,HttpStatus.CREATED);
 }
 public List<EmployeeDTO> getEmployeesByManagerId(String managerId) {
